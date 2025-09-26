@@ -35,7 +35,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'server.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
@@ -52,10 +52,9 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'server.wsgi.application'
+WSGI_APPLICATION = 'config.wsgi.application'
 
 
-# Use in-memory SQLite for tests
 if 'test' in sys.argv or 'pytest' in sys.modules:
     DATABASES = {
         'default': {
@@ -63,7 +62,20 @@ if 'test' in sys.argv or 'pytest' in sys.modules:
             'NAME': ':memory:',
         }
     }
-# Local development: file-based SQLite
+
+# elif os.environ.get("DJANGO_DEBUG", "True") == "False":
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.postgresql',
+#             'NAME': os.environ.get("POSTGRES_DB", "prod_db_name"),
+#             'USER': os.environ.get("SUPABASE_DB_USER", "prod_user"),
+#             'PASSWORD': os.environ.get("SUPABASE_DB_PASSWORD", "prod_password"),
+#             'HOST': os.environ.get("SUPABASE_DB_HOST", "localhost"),
+#             'PORT': os.environ.get("SUPABASE_DB_PORT", "5432"),
+#         }
+#     }
+
+# Local development: SQLite file
 else:
     DATABASES = {
         'default': {
