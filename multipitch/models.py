@@ -11,5 +11,5 @@ class UserBackup(models.Model):
     last_sync= models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"Backup for {self.user.username} at {self.last_synced_at}"
+        return f"Backup for {self.user.username} at {self.last_sync}"
     

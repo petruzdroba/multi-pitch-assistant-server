@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'mulipitch',
+    'multipitch',
 ]
 
 MIDDLEWARE = [
@@ -83,6 +83,9 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
+
+AUTH_USER_MODEL = 'multipitch.UserAuth'
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
