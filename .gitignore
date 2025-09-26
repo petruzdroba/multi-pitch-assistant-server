@@ -236,6 +236,7 @@ venv/
 ENV/
 env/
 .venv/
+env.py
 
 # IDEs / Editors
 .vscode/
