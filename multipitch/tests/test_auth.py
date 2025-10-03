@@ -58,3 +58,58 @@ class SignupViewTests(APITestCase):
         response = self.client.post(self.url, self.invalid_email_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('email', response.data)
+
+
+class LoginViewTests(APITestCase):
+    def setUp(self):
+        self.url = reverse('login')
+        self.user = User.objects.create_user(
+            username='loginuser',
+            email='login@example.com',
+            password='StrongPass123!'
+        )
+
+        self.valid_payload = {
+            'email': 'login@example.com',
+            'password': 'StrongPass123!'
+        }
+        self.wrong_password_payload = {
+            'email': 'login@example.com',
+            'password': 'WrongPass123'
+        }
+        self.nonexistent_email_payload = {
+            'email': 'nouser@example.com',
+            'password': 'StrongPass123!'
+        }
+        self.missing_email_payload = {
+            'password': 'StrongPass123!'
+        }
+        self.missing_password_payload = {
+            'email': 'login@example.com'
+        }
+
+    def test_login_successful(self):
+        response = self.client.post(self.url, self.valid_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
+
+    def test_login_wrong_password(self):
+        response = self.client.post(self.url, self.wrong_password_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('non_field_errors' in response.data or 'detail' in response.data)
+
+    def test_login_nonexistent_email(self):
+        response = self.client.post(self.url, self.nonexistent_email_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue('non_field_errors' in response.data or 'detail' in response.data)
+
+    def test_login_missing_email(self):
+        response = self.client.post(self.url, self.missing_email_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('email', response.data)
+
+    def test_login_missing_password(self):
+        response = self.client.post(self.url, self.missing_password_payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('password', response.data)
