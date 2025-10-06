@@ -2,6 +2,7 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -126,3 +127,47 @@ class LoginViewTests(APITestCase):
         response = self.client.post(self.url, self.missing_password_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('password', response.data)
+
+
+class MeViewTests(APITestCase):
+    def setUp(self):
+        self.url = reverse('me')
+        self.user = User.objects.create_user(
+            username='meuser',
+            email='meuser@example.com',
+            password='StrongPass123!'
+        )
+        self.refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(self.refresh.access_token)
+
+    def test_me_authenticated(self):
+        """Authenticated user receives user data and a refreshed access token"""
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
+        response = self.client.get(self.url, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('user', response.data)
+        self.assertIn('accessToken', response.data)
+        self.assertEqual(response.data['user']['username'], self.user.username)
+        self.assertEqual(response.data['user']['email'], self.user.email)
+        self.assertNotEqual(response.data['accessToken'], self.access_token)  # new token issued
+
+    def test_me_unauthenticated(self):
+        """Unauthenticated request returns user as None"""
+        response = self.client.get(self.url, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('user', response.data)
+        self.assertIsNone(response.data['user'])
+
+    def test_me_invalid_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer invalidtoken123')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 401)
+
+
+    def test_me_missing_authorization_header(self):
+        """No Authorization header behaves like unauthenticated"""
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['user'])
