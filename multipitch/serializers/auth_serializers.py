@@ -75,3 +75,8 @@ class LoginSerializer(serializers.Serializer):
             "accessToken": str(refresh.access_token),
             "refreshToken": str(refresh),
         }
+        
+class MeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email')
