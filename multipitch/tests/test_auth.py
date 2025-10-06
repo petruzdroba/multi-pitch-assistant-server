@@ -2,6 +2,7 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -32,9 +33,15 @@ class SignupViewTests(APITestCase):
     def test_signup_successful(self):
         response = self.client.post(self.url, self.valid_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn('access', response.data)
-        self.assertIn('refresh', response.data)
-        self.assertEqual(response.data['username'], self.valid_payload['username'])
+
+        # tokens renamed and nested user object
+        self.assertIn('accessToken', response.data)
+        self.assertIn('refreshToken', response.data)
+        self.assertIn('user', response.data)
+
+        user_data = response.data['user']
+        self.assertEqual(user_data['username'], self.valid_payload['username'])
+        self.assertEqual(user_data['email'], self.valid_payload['email'])
         self.assertTrue(User.objects.filter(username='testuser').exists())
 
     def test_signup_missing_username(self):
@@ -49,7 +56,7 @@ class SignupViewTests(APITestCase):
 
     def test_signup_duplicate_username(self):
         # Create first user
-        User.objects.create_user(username='testuser', password='StrongPass123!')
+        User.objects.create_user(username='testuser', email='existing@example.com', password='StrongPass123!')
         response = self.client.post(self.url, self.valid_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('username', response.data)
@@ -91,8 +98,15 @@ class LoginViewTests(APITestCase):
     def test_login_successful(self):
         response = self.client.post(self.url, self.valid_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response.data)
-        self.assertIn('refresh', response.data)
+
+        # tokens renamed and nested user object
+        self.assertIn('accessToken', response.data)
+        self.assertIn('refreshToken', response.data)
+        self.assertIn('user', response.data)
+
+        user_data = response.data['user']
+        self.assertEqual(user_data['username'], self.user.username)
+        self.assertEqual(user_data['email'], self.user.email)
 
     def test_login_wrong_password(self):
         response = self.client.post(self.url, self.wrong_password_payload, format='json')
@@ -113,3 +127,47 @@ class LoginViewTests(APITestCase):
         response = self.client.post(self.url, self.missing_password_payload, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('password', response.data)
+
+
+class MeViewTests(APITestCase):
+    def setUp(self):
+        self.url = reverse('me')
+        self.user = User.objects.create_user(
+            username='meuser',
+            email='meuser@example.com',
+            password='StrongPass123!'
+        )
+        self.refresh = RefreshToken.for_user(self.user)
+        self.access_token = str(self.refresh.access_token)
+
+    def test_me_authenticated(self):
+        """Authenticated user receives user data and a refreshed access token"""
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
+        response = self.client.get(self.url, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('user', response.data)
+        self.assertIn('accessToken', response.data)
+        self.assertEqual(response.data['user']['username'], self.user.username)
+        self.assertEqual(response.data['user']['email'], self.user.email)
+        self.assertNotEqual(response.data['accessToken'], self.access_token)  # new token issued
+
+    def test_me_unauthenticated(self):
+        """Unauthenticated request returns user as None"""
+        response = self.client.get(self.url, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('user', response.data)
+        self.assertIsNone(response.data['user'])
+
+    def test_me_invalid_token(self):
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer invalidtoken123')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 401)
+
+
+    def test_me_missing_authorization_header(self):
+        """No Authorization header behaves like unauthenticated"""
+        response = self.client.get(self.url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['user'])
