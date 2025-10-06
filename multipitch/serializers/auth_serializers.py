@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from django.contrib.auth.hashers import check_password 
+from django.contrib.auth.hashers import check_password
 from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
@@ -19,7 +19,6 @@ class SignupSerializer(serializers.ModelSerializer):
         fields = ('username', 'email', 'password')
 
     def create(self, validated_data):
-        # Create the user with hashed password
         user = User(
             username=validated_data['username'],
             email=validated_data.get('email')
@@ -27,6 +26,20 @@ class SignupSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
+
+    def to_representation(self, instance):
+        """Return user data + tokens in desired format."""
+        refresh = RefreshToken.for_user(instance)
+        return {
+            "user": {
+                "id": instance.id,
+                "username": instance.username,
+                "email": instance.email,
+            },
+            "accessToken": str(refresh.access_token),
+            "refreshToken": str(refresh)
+        }
+
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
@@ -51,10 +64,14 @@ class LoginSerializer(serializers.Serializer):
         if not check_password(password, user.password):
             raise serializers.ValidationError("Invalid email or password.")
 
-        # Issue JWT tokens
         refresh = RefreshToken.for_user(user)
 
         return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+            },
+            "accessToken": str(refresh.access_token),
+            "refreshToken": str(refresh),
         }
