@@ -8,6 +8,7 @@ from ..serializers.auth_serializers import SignupSerializer, LoginSerializer, Me
 
 
 class SignupView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -19,12 +20,15 @@ class SignupView(APIView):
 
 
 class LoginView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
+        print(f"Login attempt for: {request.data.get('email')}")
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
+        print(f"Login failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     
