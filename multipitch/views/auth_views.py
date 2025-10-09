@@ -24,11 +24,9 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        print(f"Login attempt for: {request.data.get('email')}")
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             return Response(serializer.validated_data, status=status.HTTP_200_OK)
-        print(f"Login failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     
@@ -49,6 +47,6 @@ class MeView(APIView):
         serializer = MeSerializer(user)
         return Response({
             "user": serializer.data,
-            "accessToken": new_access_token
+            "access": new_access_token
         }, status=status.HTTP_200_OK)
 

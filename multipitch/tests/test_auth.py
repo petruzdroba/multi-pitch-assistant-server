@@ -35,8 +35,8 @@ class SignupViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # tokens renamed and nested user object
-        self.assertIn('accessToken', response.data)
-        self.assertIn('refreshToken', response.data)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
         self.assertIn('user', response.data)
 
         user_data = response.data['user']
@@ -100,8 +100,8 @@ class LoginViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         # tokens renamed and nested user object
-        self.assertIn('accessToken', response.data)
-        self.assertIn('refreshToken', response.data)
+        self.assertIn('access', response.data)
+        self.assertIn('refresh', response.data)
         self.assertIn('user', response.data)
 
         user_data = response.data['user']
@@ -139,7 +139,7 @@ class MeViewTests(APITestCase):
         )
         self.refresh = RefreshToken.for_user(self.user)
         self.access_token = str(self.refresh.access_token)
-
+    
     def test_me_authenticated(self):
         """Authenticated user receives user data and a refreshed access token"""
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.access_token}')
@@ -147,10 +147,10 @@ class MeViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('user', response.data)
-        self.assertIn('accessToken', response.data)
+        self.assertIn('access', response.data)
         self.assertEqual(response.data['user']['username'], self.user.username)
         self.assertEqual(response.data['user']['email'], self.user.email)
-        self.assertNotEqual(response.data['accessToken'], self.access_token)  # new token issued
+        self.assertNotEqual(response.data['access'], self.access_token)  # new token issued
 
     def test_me_unauthenticated(self):
         """Unauthenticated request returns user as None"""
