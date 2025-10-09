@@ -8,6 +8,7 @@ from ..serializers.auth_serializers import SignupSerializer, LoginSerializer, Me
 
 
 class SignupView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -19,6 +20,7 @@ class SignupView(APIView):
 
 
 class LoginView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -45,6 +47,6 @@ class MeView(APIView):
         serializer = MeSerializer(user)
         return Response({
             "user": serializer.data,
-            "accessToken": new_access_token
+            "access": new_access_token
         }, status=status.HTTP_200_OK)
 
