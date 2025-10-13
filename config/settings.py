@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import sys
+from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -143,3 +144,17 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=30),  
+
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=180), 
+
+    "ROTATE_REFRESH_TOKENS": True,
+
+    # Do not blacklist old refresh tokens
+    "BLACKLIST_AFTER_ROTATION": False,
+
+    "UPDATE_LAST_LOGIN": True,
+}
