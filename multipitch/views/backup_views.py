@@ -33,18 +33,11 @@ class BackupRetrieveView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """
-        Retrieve the current user's backup.
-        Returns Base64-encoded string in 'sqlite_blob'.
-        """
         try:
-            backup = request.user.data  # related_name="data"
+            backup = request.user.data
         except UserBackup.DoesNotExist:
             return Response({"detail": "No backup found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Encode raw bytes to Base64 for JSON transport
-        data = {
-            "sqlite_blob": base64.b64encode(backup.sqlite_blob).decode(),
-            "last_sync": backup.last_sync
-        }
-        return Response(data, status=status.HTTP_200_OK)
+        serializer = UserBackupSerializer(backup)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
